@@ -283,12 +283,15 @@ public class Node{
     	  		fixee.insertSubset(1,right.subset[0]);
 
     	  		//do own key update.
-    	  		data[i] = right.data[1];
+    	  		//data[i] = right.data[1];
+    	  		data[i] = right.data[0];
 
     	  		//do irght.
     	  		right.deleteData(0);
     	  		right.deleteSubset(0);
     	  	}
+
+    	  	//merge to i-1.
     	  	else if(i!= 0 && subset[i-1].dataCount == MINIMUM){
     	  		Node left = subset[i-1];
 
@@ -296,23 +299,35 @@ public class Node{
     	  		left.insertData(1, data[i-1]);
     	  		left.insertSubset(2, fixee.subset[0]);
 
-
     	  		//do own.
     	  		deleteData(i-1);
     	  		deleteSubset(i);
 
     	  	}
+
+    	  	//merge to i+1.
     	  	else if(i!=childCount-1 && subset[i+1].dataCount == MINIMUM){
     	  		Node right = subset[i+1];
 
     	  		//do right.
-    	  		right.insertData(0, data[i]);
+    	  		//right.insertData(0, data[i]);
+    	  		right.insertData(0, smallestInSubset(right));
     	  		right.insertSubset(0, fixee.subset[0]);
 
     	  		//do own
     	  		deleteData(i);
     	  		deleteSubset(i);
     	  	}
+		}
+	}
+
+
+	private int smallestInSubset(Node n){
+
+		if(n.isLeaf()){
+			return n.data[0];
+		}else{
+			return smallestInSubset(n.subset[0]);
 		}
 	}
 
