@@ -107,6 +107,7 @@ public class Node{
 	  //consider datCount = 0 case and when insertIndex is bigger than any existing index.
 	  if(dataCount == 0 || insertIndex == dataCount){
 		  data[insertIndex] = entry;
+		  valueList[insertIndex].clear();
 	  }else{
 	      for(int i = dataCount-1; i>=insertIndex; i--){//shift elements to right by one.
 	    	  data[i+1] = data[i];
@@ -129,11 +130,13 @@ public class Node{
       // Student will replace this return statement with their own code:
 	   
       int result = data[removeIndex];
+      valueList[removeIndex].clear();//cuz it doesn't work for border values.
       for(int i = removeIndex; i<dataCount-1; i++){
     	  data[i]=data[i+1];
     	  valueList[i].clear();
     	  valueList[i].addAll(valueList[i+1]);
       }
+
       dataCount--;
       return result;
    }
@@ -145,6 +148,25 @@ public class Node{
 		return (childCount == 0);
 	}
 
+
+	public boolean remove(int key, int value){
+		boolean answer = looseRemove(key, value);
+		if(dataCount == 0 && childCount == 1){
+			Node onlyChild = subset[0];
+			dataCount = onlyChild.dataCount;
+			childCount = onlyChild.childCount;
+			data = onlyChild.data;
+			subset = onlyChild.subset;
+
+			valueList[0].addAll(onlyChild.valueList[0]);
+			valueList[1].addAll(onlyChild.valueList[1]);
+			valueList[2].addAll(onlyChild.valueList[2]);
+		}
+		return answer;
+	}
+
+
+      
 
 	private boolean looseRemove(int key, int value){
 	// Precondition:
@@ -159,15 +181,15 @@ public class Node{
 		//leaf index returns index of element, or where is should be placed.
 		int index = leafIndex(key);
 
-		//Is leaf, not found here.
+		//Is leaf & not found here.
 		if(isLeaf() && (index == dataCount || data[index] != key)){
 			return false;
 		}
 
-		//Is leaf, found here.
+		//Is leaf & found here.
 		else if(isLeaf() && index < dataCount && data[index] == key){
 			LinkedList<Integer> temp = valueList[index];
-			temp.remove(value);
+			temp.remove((Integer)value);
 			if(temp.size()==0){
 				deleteData(index);
 			}
@@ -177,7 +199,7 @@ public class Node{
 		//If inner node, recurse.
 		else if(!isLeaf()){
 			index = searchIndex(key);
-			boolean answer = subset[index].looseRemove(key);
+			boolean answer = subset[index].looseRemove(key,value);
 			if(subset[index].dataCount == 0){
 				fixShortage(index);
 			}
@@ -191,27 +213,108 @@ public class Node{
 	}
 
 
-	
+	//subset[i] has shortage.
+	private void fixShortage(int i){
+
+		Node fixee = subset[i];
+
+		/* Leaf */
+		if(fixee.isLeaf()){
+
+			//1) Transfer an element from subset[i-1]
+			if(i != 0 && subset[i-1].dataCount > 1){
+				Node left = subset[i-1];
+
+				fixee.insertData(0,left.data[1]);//insertdata just shifts and clears list at index.
+				fixee.valueList[0].addAll(left.valueList[1]);//copy list.
+				left.deleteData(1); //also takes care of emptying list.
+
+				//Adjust the parent key.
+				data[i-1] = fixee.data[0];
+			}
+
+			//2) Transfer an element from subset[i+1]
+			else if(i != childCount-1 && subset[i+1].dataCount > 1){
+				Node right = subset[i+1];
+
+				fixee.insertData(0,right.data[0]);
+				fixee.valueList[0].addAll(right.valueList[0]);
+				right.deleteData(0);
+
+				//Not do double up- ask TA(should all internal nodes be in leaves too)?
+				//Adjust the parent key.
+				data[i] = right.data[0];
+			}
+
+			//3)
+			else{
+
+				deleteSubset(i);
+				if(i == 0){
+					deleteData(0);
+				}else{
+					deleteData(i-1);
+				}
+				//ASK TA- if no internal nodes, then deleteData(0) or deleteData(1).
+			}
+		}
+
+		/* Inner node. */
+		else{
+			if(i!= 0 && subset[i-1].dataCount > MINIMUM){	//move from i-1
+    	  		Node left = subset[i-1];
+
+    	  		//do fixee.
+    	  		fixee.insertData(0, data[i-1]);
+    	  		fixee.insertSubset(0, left.subset[2]);
+
+    	  		//do own key update.
+    	  		data[i-1] = left.data[1];
+
+    	  		//do left.
+    	  		left.deleteData(1);
+    	  		left.deleteSubset(2);
+    	  	}
+    	  	else if(i!= childCount-1 &&subset[i+1].dataCount > MINIMUM){	//move from i+1
+    	  		Node right = subset[i+1];
+
+    	  		//do fixee.
+    	  		fixee.insertData(0,data[i]);
+    	  		fixee.insertSubset(1,right.subset[0]);
+
+    	  		//do own key update.
+    	  		data[i] = right.data[1];
+
+    	  		//do irght.
+    	  		right.deleteData(0);
+    	  		right.deleteSubset(0);
+    	  	}
+    	  	else if(i!= 0 && subset[i-1].dataCount == MINIMUM){
+    	  		Node left = subset[i-1];
+
+    	  		//do left.
+    	  		left.insertData(1, data[i-1]);
+    	  		left.insertSubset(2, fixee.subset[0]);
 
 
+    	  		//do own.
+    	  		deleteData(i-1);
+    	  		deleteSubset(i);
 
+    	  	}
+    	  	else if(i!=childCount-1 && subset[i+1].dataCount == MINIMUM){
+    	  		Node right = subset[i+1];
 
+    	  		//do right.
+    	  		right.insertData(0, data[i]);
+    	  		right.insertSubset(0, fixee.subset[0]);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    	  		//do own
+    	  		deleteData(i);
+    	  		deleteSubset(i);
+    	  	}
+		}
+	}
 
 
 	private void looseAdd(int key, int value){
@@ -230,7 +333,7 @@ public class Node{
 			int index = leafIndex(key);
 			//Has key already 
 			if(index != dataCount && dataCount != 0 && data[index] == key){
-				valueList[index].add(value);
+				valueList[index].add((Integer)value);
 				return;
 			}
 			//Dont have key
@@ -267,6 +370,24 @@ public class Node{
 	   }
 	   childCount++;
    }
+
+
+   private Node deleteSubset(int removeIndex)
+   // Precondition: 0 <= removeIndex < childCount.
+   // Postcondition: The element at subset[removeIndex] has been removed and
+   // subsequent elements shifted over to close the gap. Also, childCount has
+   // been decremented by one, and the return value is a copy of the
+   // removed element.
+   {
+      // Student will replace this return statement with their own code
+		Node result = subset[removeIndex];
+		for(int i = removeIndex; i<childCount-1; i++){
+			subset[i]=subset[i+1];
+		}
+		childCount--;
+		return result;     
+   }
+
 
 	private void fixExcess(int i){
 		// Precondition: 
