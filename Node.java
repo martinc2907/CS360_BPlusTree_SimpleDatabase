@@ -249,6 +249,18 @@ public class Node{
 			//3)
 			else{
 
+				if(fixee.prevLeaf != null){
+					fixee.prevLeaf.nextLeaf = fixee.nextLeaf;
+					if(fixee.nextLeaf!=null){
+						fixee.nextLeaf.prevLeaf = fixee.prevLeaf;
+					}
+				}
+
+				// if(i == 1){
+				// 	Node left = subset[i-1];
+				// 	left.nextLeaf = fixee.nextLeaf;
+				// }
+
 				deleteSubset(i);
 				if(i == 0){
 					deleteData(0);
@@ -433,6 +445,9 @@ public class Node{
 
 
 			//update before making new link.- this is because we are leaving left as the original node.
+			if(left.nextLeaf!=null){
+				left.nextLeaf.prevLeaf = right;
+			}
 			right.nextLeaf = left.nextLeaf;
 
 			left.nextLeaf = right;

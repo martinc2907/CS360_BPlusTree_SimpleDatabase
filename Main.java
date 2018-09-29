@@ -41,30 +41,37 @@ public class Main {
 			switch(menu){
 
 				case 1://LOAD
+					System.out.println("==============LOAD==============");
 					load(node, in);
 					break;
 
 				case 2://PRINT
+					System.out.println("==============PRINT=============");
 					print(node);
 					break;
 
 				case 3://INSERT
+					System.out.println("==============INSERT============");
 					insert(node, in);
 					break;
 
 				case 4://DELETE
+					System.out.println("==============DELETE============");
 					delete(node, in);
 					break;
 
 				case 5://SEARCH
+					System.out.println("==============SEARCH============");
 					search(node, in);
 					break;
 
 				case 6://RANGE_SEARCH
+					System.out.println("===========RANGE_SEARCH==========");
 					range_search(node, in);
 					break;
 
 				case 7://EXIT
+					System.out.println("==============EXIT==============");
 					run_program = false;
 					break;
 
@@ -329,7 +336,6 @@ public class Main {
 		}
 		System.out.println();
 	}
-
 
 
 
