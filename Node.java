@@ -6,9 +6,12 @@ public class Node{
 	private final int MINIMUM = 1;
 	private final int MAXIMUM = 2;
 
+	//Used for BFS print.
+	public int level;
+
 	//List of Keys owned.
 	public int dataCount;
-	public int[] data = new int[MAXIMUM+1];
+	public Key[] data = new Key[MAXIMUM+1];
 
 	//List of children.
 	public int childCount;
@@ -19,8 +22,8 @@ public class Node{
 	public LinkedList<Integer>[] valueList = new LinkedList[MAXIMUM+1];
 
 	//Pointer to next leaf.
-	public Node nextLeaf;
-	public Node prevLeaf;
+	public Node nextLeaf = null;
+	public Node prevLeaf = null;
 
 
 	@SuppressWarnings("unchecked")
@@ -34,9 +37,9 @@ public class Node{
 		}
 	}
 
-	public Node search(int key){
+	public Node search(Key key){
 		if(isLeaf()){
-			if(data[0] == key || data[1] == key){
+			if(data[0].equals(key) || data[1].equals(key)){
 				return this;
 			}else{
 				return null;
@@ -49,23 +52,31 @@ public class Node{
 		}
 	}
 
+	public Node get_front_leaf(){
+		if(!isLeaf()){
+			return subset[0].get_front_leaf();
+		}else{
+			return this;
+		}
+	}
 
-	private int searchIndex(int target){
+
+	private int searchIndex(Key target){
 		if(dataCount == 0){
 			return 0;
 		}
 		if(dataCount == 1){
-			if(target<data[0]){
+			if(target.smallerThan(data[0])){
 				return 0;
 			}else{
 				return 1;
 			}
 		}
 		if(dataCount == 2){
-			if(target<data[0]){
+			if(target.smallerThan(data[0])){
 				return 0;
 			}
-			else if(target < data[1]){
+			else if(target.smallerThan(data[1])){
 				return 1;
 			}
 			else{
@@ -76,21 +87,10 @@ public class Node{
 	}
 
 
-	private int leafIndex(int target){
-		// if(data[0] == target){
-		// 	return 0;
-		// }
-		// else if(data[1] == target){
-		// 	return 1;
-		// }
-		// else if(data[2] == target){
-		// 	return 2;
-		// }else{
-		// 	return -1;
-		// }
+	private int leafIndex(Key target){
 		int index=0;
 		for(index = 0; index<dataCount; index++){
-			if(data[index]>= target){
+			if(data[index].largerEqualThan(target)){
 		  		return index;
 			}
 		}
@@ -98,7 +98,7 @@ public class Node{
 	}
 
 
-	private void insertData(int insertIndex, int entry)
+	private void insertData(int insertIndex, Key entry)
    // Precondition: 0 <= insertIndex <= dataCount <= MAXIMUM.
    // Postcondition: The entry has been inserted at data[insertIndex] with
    // subsequent elements shifted right to make room. Also, dataCount has
@@ -120,7 +120,7 @@ public class Node{
    }
 
 
-   private int deleteData(int removeIndex)
+   private Key deleteData(int removeIndex)
    // Precondition: 0 <= removeIndex < dataCount.
    // Postcondition: The element at data[removeIndex] has been removed and
    // subsequent elements shifted over to close the gap. Also, dataCount has
@@ -129,7 +129,7 @@ public class Node{
    {
       // Student will replace this return statement with their own code:
 	   
-      int result = data[removeIndex];
+      Key result = data[removeIndex];
       valueList[removeIndex].clear();//cuz it doesn't work for border values.
       for(int i = removeIndex; i<dataCount-1; i++){
     	  data[i]=data[i+1];
@@ -142,14 +142,14 @@ public class Node{
    }
 
 
-	private boolean isLeaf()
+	public boolean isLeaf()
 	// Return value is true if and only if the B-tree has only a root.
 	{
 		return (childCount == 0);
 	}
 
 
-	public boolean remove(int key, int value){
+	public boolean remove(Key key, int value){
 		boolean answer = looseRemove(key, value);
 		if(dataCount == 0 && childCount == 1){
 			Node onlyChild = subset[0];
@@ -168,7 +168,7 @@ public class Node{
 
       
 
-	private boolean looseRemove(int key, int value){
+	private boolean looseRemove(Key key, int value){
 	// Precondition:
 	//   The entire B-tree is valid.
 	// Postcondition:
@@ -182,12 +182,12 @@ public class Node{
 		int index = leafIndex(key);
 
 		//Is leaf & not found here.
-		if(isLeaf() && (index == dataCount || data[index] != key)){
+		if(isLeaf() && (index == dataCount || !data[index].equals(key))){
 			return false;
 		}
 
 		//Is leaf & found here.
-		else if(isLeaf() && index < dataCount && data[index] == key){
+		else if(isLeaf() && index < dataCount && data[index].equals(key)){
 			LinkedList<Integer> temp = valueList[index];
 			temp.remove((Integer)value);
 			if(temp.size()==0){
@@ -322,7 +322,7 @@ public class Node{
 	}
 
 
-	private int smallestInSubset(Node n){
+	private Key smallestInSubset(Node n){
 
 		if(n.isLeaf()){
 			return n.data[0];
@@ -332,7 +332,7 @@ public class Node{
 	}
 
 
-	private void looseAdd(int key, int value){
+	private void looseAdd(Key key, int value){
 	// Precondition:
 	//   The entire B-tree is valid.
 	// Postcondition:
@@ -347,7 +347,7 @@ public class Node{
 		if(isLeaf()){	//Add to itself.
 			int index = leafIndex(key);
 			//Has key already 
-			if(index != dataCount && dataCount != 0 && data[index] == key){
+			if(index != dataCount && dataCount != 0 && data[index].equals(key)){
 				valueList[index].add((Integer)value);
 				return;
 			}
@@ -421,7 +421,7 @@ public class Node{
 
 		//if leaf.
 		if(fixee.isLeaf()){
-			int middleElement = subset[i].data[1];
+			Key middleElement = subset[i].data[1];
 
 			Node left = subset[i];
 			left.dataCount = 1;
@@ -454,7 +454,7 @@ public class Node{
 
 		//not leaf- follow standard b tree algo.
 		else{
-			int middleElement = subset[i].data[1];
+			Key middleElement = subset[i].data[1];
 
 			Node left = subset[i];
 			left.dataCount = 1;
@@ -481,7 +481,7 @@ public class Node{
 	}
 
 
-	public void add(int key, int value){
+	public void add(Key key, int value){
 		looseAdd(key,value);
 
 		if(dataCount > MAXIMUM){
@@ -507,7 +507,43 @@ public class Node{
 		}
 	}
 
+	//print just itself.
+	public String toString(){
+		StringBuilder result = new StringBuilder("[");
 
+		if(isLeaf()){
+			for(int i = 0; i < dataCount; i++){
+				result.append("(");
+				result.append(data[i]);
+				result.append(",[");
+				for(int j =0; j< valueList[i].size(); j++){
+					result.append(valueList[i].get(j));
+					if( j!= valueList[i].size() -1){
+						result.append(",");
+					}
+				}
+				result.append("])");
+				if(i!= dataCount -1){
+					result.append(",");
+				}
+			}
+			result.append("]");
+		}
+		else{
+			for(int i = 0; i < dataCount; i++){
+				result.append(data[i]);
+				if(i != dataCount -1){
+					result.append(",");
+				}
+			}
+			result.append("]");
+		}
+
+		return result.toString();
+	}
+
+
+	//print entire tree.
 	public void print(int indent)
    // Print a representation of this set's B-tree, useful during debugging.
    {
@@ -526,6 +562,8 @@ public class Node{
       for (i = 0; i < childCount; i++)
          subset[i].print(indent + EXTRA_INDENTATION);
    }
+
+
 
 
 
